@@ -1,0 +1,35 @@
+name: github action batch template
+
+on:
+  push
+  # schedule:
+  #   - cron: "0 */8 * * *" # 実行したい時間を指定(時間がutcなので注意)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout current branch #作業ブランチにchekout
+        uses: actions/checkout@v2 #サードパーティの公開アクションを利用
+        with:
+          ref: ${{ github.ref }}
+      - name: Git setting
+        run: |
+          # pullしておかないと Re-run all jobs 実行時はコケてしまうため
+          git pull
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Commit and push
+        run: |
+          git commit --allow-empty -m "chore: prevent automatic workflow stopping" -m "see: https://docs.github.com/en/actions/managing-workflow-runs/disabling-and-enabling-a-workflow"
+          git push
+      - name: batch
+        env:
+          ENCODED_ENV: ${{ secrets.ENCODED_ENV }}
+        run: |
+          touch .env.golang
+          echo "python batch start" 
+          echo -n ${ENCODED_ENV} | base64 -d > .env.python
+          docker-compose run python-batch python main.py
+          # docker-compose exec -T batch python main.py
+          echo "python batch end"

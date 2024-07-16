@@ -1,0 +1,33 @@
+name: github action golang batch template
+
+on:
+  push
+  # schedule:
+  #   - cron: "0 */8 * * *" # 実行したい時間を指定(時間がutcなので注意)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout current branch #作業ブランチにchekout
+        uses: actions/checkout@v2 #サードパーティの公開アクションを利用
+        with:
+          ref: ${{ github.ref }}
+      - name: Git setting
+        run: |
+          # pullしておかないと Re-run all jobs 実行時はコケてしまうため
+          git pull
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+      - name: Commit and push
+        run: |
+          git commit --allow-empty -m "chore: prevent automatic workflow stopping" -m "see: https://docs.github.com/en/actions/managing-workflow-runs/disabling-and-enabling-a-workflow"
+          git push
+      - name: batch
+        env:
+          ENCODED_GOLANG_ENV: ${{ secrets.ENCODED_GOLANG_ENV }}
+        run: |
+          touch .env.python
+          echo -n ${ENCODED_GOLANG_ENV} | base64 -d > .env.golang
+          docker-compose run golang-batch ./main
+          # docker-compose exec -T batch python main.py

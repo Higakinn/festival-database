@@ -1,0 +1,30 @@
+version: '3'
+services:
+  python-batch:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - ./python/src/:/mnt
+    env_file:
+      - .env.python
+  golang-batch-dev:
+    build:
+      context: ./golang
+      target: builder
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - ./golang/src/:/go/src
+    env_file:
+      - .env.golang
+  golang-batch:
+    build:
+      context: ./golang
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - ./golang/src/:/go/src
+    env_file:
+      - .env.golang
