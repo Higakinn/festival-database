@@ -25,6 +25,7 @@ def main():
     )
     for festival in festivals:
         region = festival.get("region")
+        access = festival.get("access")
         festival_name = festival.get("festival_name")
         date = festival.get("date")
         url = festival.get("url")
@@ -33,6 +34,7 @@ def main():
         post_id = festival_data.post_data(
             client=client,
             region=region,
+            access=access,
             festival_name=festival_name,
             date=date,
             url=url,
