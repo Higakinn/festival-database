@@ -1,6 +1,7 @@
 import festival_data
 import tweepy
 import os
+import time
 
 
 def main():
@@ -42,7 +43,9 @@ def main():
         ).get("post_id")
         print(post_id)
         festival_data.update(NOTION_API_TOKEN, page_id, post_id)
-
+    
+    time.sleep(2)
+    
     print("festival data repost")
     festivals = festival_data.held_today(NOTION_API_TOKEN, NOTION_DATABASE_ID)
     for festival in festivals:

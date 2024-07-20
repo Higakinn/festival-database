@@ -12,7 +12,7 @@ def get_all(api_token, database_id, limit=100):
             # {
             #     "property": "region"
             # },
-            {"property": "is_post", "checkbox": {"equals": True}}
+            {"property": "is_post", "checkbox": {"equals": False}}
         ]
     }
     payload = {
