@@ -115,7 +115,7 @@ def held_today(api_token, database_id, limit=100):
     return result
 
 
-def post_data(client, region, access, festival_name, date, url):
+def post(client, region, access, festival_name, date, url):
     post_content = (
         textwrap.dedent(
             """
