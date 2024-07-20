@@ -3,7 +3,7 @@ name: github action batch template
 on:
   # push:
   schedule:
-    - cron: "0 17 * * *" # UTC
+    - cron: "30 19 * * *" # UTC
   workflow_dispatch:
 jobs:
   build:
