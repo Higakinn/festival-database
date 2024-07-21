@@ -98,7 +98,7 @@ class Festival(BaseModel):
     start_date: str
     end_date: Optional[str]
     url: HttpUrl
-    x_url: Optional[HttpUrl]
+    x_url: Optional[HttpUrl] = None
 
 
 def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
@@ -142,7 +142,6 @@ def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
                 start_date=start_date,
                 end_date=end_date,
                 url=HttpUrl(url=url),
-                x_url=HttpUrl(url=url),
             )
         )
     return result
