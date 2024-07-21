@@ -1,14 +1,19 @@
 import datetime
-from datetime import date, datetime
+from datetime import datetime
 import requests
 import textwrap
 import tweepy
+import pytz
 
 from typing import List, Optional
 from pydantic import BaseModel, HttpUrl
 
 
 class XClient:
+    """
+    X(旧ツイッター)クライアントクラス
+    """
+
     def __init__(
         self,
         bearer_token,
@@ -26,12 +31,19 @@ class XClient:
         )
 
     def post(self, content: str):
+        """
+        Xにポストするための関数
+        """
         _post_result = self.__client.create_tweet(text=content)
         # TODO:エラーハンドリング
         return _post_result.data.get("id")
 
 
 class NotionClient:
+    """
+    notionクライアントクラス
+    """
+
     def __init__(self, api_token: str) -> None:
         self.__headers = {
             "Accept": "application/json",
@@ -41,6 +53,9 @@ class NotionClient:
         }
 
     def query_database(self, database_id: str, db_filter: dict, limit=100):
+        """
+        notionデータベースをクエリするための関数
+        """
         url = f"https://api.notion.com/v1/databases/{database_id}/query"
         payload = {
             "filter": db_filter,
@@ -54,6 +69,9 @@ class NotionClient:
         return None
 
     def update_page(self, page_id: str, update_props: dict):
+        """
+        notionページを更新するための関数
+        """
         url = f"https://api.notion.com/v1/pages/{page_id}"
         payload = {
             "properties": update_props,
@@ -67,6 +85,10 @@ class NotionClient:
 
 
 class Festival(BaseModel):
+    """
+    祭礼モデル
+    """
+
     id: str
     name: str
     region: str
@@ -80,21 +102,19 @@ class Festival(BaseModel):
 
 
 def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
-    # is_post=false つまり  まだ投稿していない祭礼情報を取得するためのフィルタ
+    """
+    未投稿の祭りデータを取得するための関数
+    """
     db_filter = {
         "and": [
-            # {
-            #     "property": "region"
-            # },
+            # NOTE: {"property": "<カラム名>", <notionプロパティ>:<該当プロパティのフィルタリング>}
+            ###### 参考: https://developers.notion.com/reference/post-database-query-filter#the-filter-object
             {"property": "is_post", "checkbox": {"equals": False}}
         ]
     }
     query_db_result = notion_client.query_database(
         database_id=database_id, db_filter=db_filter
     )
-
-    print("query_db_result")
-    # print(query_db_result)
 
     result = []
     for r in query_db_result:
@@ -108,10 +128,10 @@ def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
         _date_dict = _props.get("date").get("date")
         start_date = _date_dict.get("start")
         end_date = _date_dict.get("end")
+        if _date_dict.get("end") is None:
+            end_date = start_date
 
         url = _props.get("link").get("url")
-
-        print(page_id)
 
         result.append(
             Festival(
@@ -128,15 +148,18 @@ def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
     return result
 
 
-def held_today(notion_client: NotionClient, database_id: str):
+def held_today(notion_client: NotionClient, database_id: str) -> List[Festival]:
+    """
+    実行日時に開催される祭りデータを取得するための関数
+    """
+    today = datetime.datetime.today(pytz.timezone("Asia/Tokyo"))
     db_filter = {
         "and": [
-            # {
-            #     "property": "region"
-            # },
+            # NOTE: {"property": "<カラム名>", <notionプロパティ>:<該当プロパティのフィルタリング>}
+            ###### 参考: https://developers.notion.com/reference/post-database-query-filter#the-filter-object
             {"property": "is_post", "checkbox": {"equals": True}},
             {"property": "is_repost", "checkbox": {"equals": False}},
-            {"property": "date", "date": {"equals": f"{datetime.date.today()}"}},
+            {"property": "date", "date": {"equals": f"{today}"}},
             {"property": "date", "date": {"this_week": {}}},
         ]
     }
@@ -173,8 +196,11 @@ def held_today(notion_client: NotionClient, database_id: str):
 
 
 def _post_content(festival: Festival):
+    """
+    ポストする内容を生成するための関数
+    """
     date = f"{festival.start_date} ~ {festival.end_date}"
-    if festival.end_date is None:
+    if festival.start_date == festival.end_date:
         date = festival.start_date
     post_content = (
         textwrap.dedent(
@@ -208,13 +234,21 @@ def _post_content(festival: Festival):
 
 
 def post(x_client: tweepy.Client, festival: Festival):
+    """
+    Xに祭り情報をポストするための関数
+    """
     post_id = x_client.post(_post_content(festival))
     # TODO: エラーハンドリング
     return {"post_id": post_id}
 
 
-def _repost_content(festival: Festival):
-    today = datetime.date.today()
+def _quoted_repost_content(festival: Festival):
+    """
+    リポストする内容を生成するための関数
+    """
+    # TODO: 数日間にわたって開催される祭りのときに開催期間中に引用リポストできるようなポスト内容を生成できるようにする
+    # today = datetime.datetime.today(pytz.timezone("Asia/Tokyo"))
+
     repost_content = (
         textwrap.dedent(
             """
@@ -238,13 +272,19 @@ def _repost_content(festival: Festival):
     return repost_content
 
 
-def repost(x_client: XClient, festival: Festival):
-    _repost_id = x_client.post(_repost_content(festival))
+def quoted_repost(x_client: XClient, festival: Festival):
+    """
+    Xに投稿済みの祭り情報を引用リポストするための関数
+    """
+    _repost_id = x_client.post(_quoted_repost_content(festival))
     # TODO: エラーハンドリング
     return {"repost_id": _repost_id}
 
 
 def update_post_id(notion_client: NotionClient, festival: Festival, post_id: str):
+    """
+    NotionDBの該当データのpost_idカラムを更新する
+    """
     update_props = {
         "is_post": {"checkbox": True},
         "post_id": {"rich_text": [{"text": {"content": post_id}}]},
@@ -253,6 +293,9 @@ def update_post_id(notion_client: NotionClient, festival: Festival, post_id: str
 
 
 def update_repost_id(notion_client: NotionClient, festival: Festival, repost_id: str):
+    """
+    NotionDBの該当データのrepost_idカラムを更新する
+    """
     update_props = {
         "is_repost": {"checkbox": True},
         "repost_id": {"rich_text": [{"text": {"content": repost_id}}]},

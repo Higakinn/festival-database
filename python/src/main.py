@@ -4,7 +4,7 @@ import os
 import time
 import logging
 
-### ログ設定
+### ====================================== ログ設定 ============================================
 logger = logging.getLogger(__name__)
 
 formatter = logging.Formatter(
@@ -17,19 +17,22 @@ stream_handler.setFormatter(formatter)
 stream_handler.setLevel(logging.DEBUG)
 
 logger.addHandler(stream_handler)
+# =============================================================================================
 
 
 def main():
     # 環境変数郡を取得
+    ## Notion関連の環境変数
     NOTION_API_TOKEN = os.getenv("NOTION_API_TOKEN")
     NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
+    ## X関連の環境変数
     X_API_KEY = os.getenv("X_API_KEY")
     X_API_KEY_SECRET = os.getenv("X_API_KEY_SECRET")
     X_API_BEARER_TOKEN = os.getenv("X_API_BEARER_TOKEN")
     X_API_ACCESS_TOKEN = os.getenv("X_API_ACCESS_TOKEN")
     X_API_ACCESS_TOKEN_SECRET = os.getenv("X_API_ACCESS_TOKEN_SECRET")
 
-    # x(旧twitter)クライアント
+    # X(旧twitter)クライアント
     x_client = tweepy.Client(
         bearer_token=X_API_BEARER_TOKEN,
         consumer_key=X_API_KEY,
@@ -37,7 +40,7 @@ def main():
         access_token=X_API_ACCESS_TOKEN,
         access_token_secret=X_API_ACCESS_TOKEN_SECRET,
     )
-    # notionクラインアント
+    # Notionクラインアント
     notion_client = festival_data.NotionClient(api_token=NOTION_API_TOKEN)
     x_client = festival_data.XClient(
         bearer_token=X_API_BEARER_TOKEN,
@@ -49,15 +52,17 @@ def main():
 
     print("python batch start!!")
 
+    # 祭り情報をXにポストする
     post_festival_data(
         notion_client=notion_client, x_client=x_client, database_id=NOTION_DATABASE_ID
     )
 
     time.sleep(2)
 
-    # repost_festival_data(
-    #     notion_client=notion_client, x_client=x_client, database_id=NOTION_DATABASE_ID
-    # )
+    # Xに投稿済みの祭り情報をリポストする
+    quoted_repost_festival_data(
+        notion_client=notion_client, x_client=x_client, database_id=NOTION_DATABASE_ID
+    )
 
     print("python batch end!!")
 
@@ -78,15 +83,15 @@ def post_festival_data(notion_client, x_client, database_id):
     print("festival data post end!")
 
 
-def repost_festival_data(notion_client, x_client, database_id):
+def quoted_repost_festival_data(notion_client, x_client, database_id):
     print("festival data repost start !")
     held_today_festivals = festival_data.held_today(
         notion_client=notion_client, database_id=database_id
     )
     for festival in held_today_festivals:
-        repost_id = festival_data.repost(x_client=x_client, festival=festival).get(
-            "repost_id"
-        )
+        repost_id = festival_data.quoted_repost(
+            x_client=x_client, festival=festival
+        ).get("repost_id")
         festival_data.update_repost_id(
             notion_client=notion_client, festival=festival, repost_id=repost_id
         )
@@ -94,12 +99,4 @@ def repost_festival_data(notion_client, x_client, database_id):
 
 
 if __name__ == "__main__":
-    # main()
-    import datetime
-    import pytz
-
-    now = datetime.datetime.now()
-    print(now)
-
-    now = datetime.datetime.now(pytz.timezone("Asia/Tokyo"))
-    print(now)
+    main()
