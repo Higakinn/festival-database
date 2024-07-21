@@ -32,16 +32,9 @@ def main():
     X_API_ACCESS_TOKEN = os.getenv("X_API_ACCESS_TOKEN")
     X_API_ACCESS_TOKEN_SECRET = os.getenv("X_API_ACCESS_TOKEN_SECRET")
 
-    # X(旧twitter)クライアント
-    x_client = tweepy.Client(
-        bearer_token=X_API_BEARER_TOKEN,
-        consumer_key=X_API_KEY,
-        consumer_secret=X_API_KEY_SECRET,
-        access_token=X_API_ACCESS_TOKEN,
-        access_token_secret=X_API_ACCESS_TOKEN_SECRET,
-    )
     # Notionクラインアント
     notion_client = festival_data.NotionClient(api_token=NOTION_API_TOKEN)
+    # X(旧twitter)クライアント
     x_client = festival_data.XClient(
         bearer_token=X_API_BEARER_TOKEN,
         consumer_key=X_API_KEY,
