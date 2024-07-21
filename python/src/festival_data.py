@@ -1,11 +1,85 @@
+import datetime
+from datetime import date, datetime
 import requests
 import textwrap
-import datetime
+import tweepy
+
+from typing import List, Optional
+from pydantic import BaseModel, HttpUrl
 
 
-def get_all(api_token, database_id, limit=100):
-    # notion get
-    url = f"https://api.notion.com/v1/databases/{database_id}/query"
+class XClient:
+    def __init__(
+        self,
+        bearer_token,
+        consumer_key,
+        consumer_secret,
+        access_token,
+        access_token_secret,
+    ) -> None:
+        self.__client: tweepy.Client = tweepy.Client(
+            bearer_token=bearer_token,
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret,
+        )
+
+    def post(self, content: str):
+        _post_result = self.__client.create_tweet(text=content)
+        # TODO:エラーハンドリング
+        return _post_result.data.get("id")
+
+
+class NotionClient:
+    def __init__(self, api_token: str) -> None:
+        self.__headers = {
+            "Accept": "application/json",
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json",
+            "Authorization": f"{api_token}",
+        }
+
+    def query_database(self, database_id: str, db_filter: dict, limit=100):
+        url = f"https://api.notion.com/v1/databases/{database_id}/query"
+        payload = {
+            "filter": db_filter,
+            "page_size": limit,
+        }
+
+        response = requests.post(url, json=payload, headers=self.__headers)
+        if response.status_code == requests.codes.ok:
+            return response.json().get("results")
+
+        return None
+
+    def update_page(self, page_id: str, update_props: dict):
+        url = f"https://api.notion.com/v1/pages/{page_id}"
+        payload = {
+            "properties": update_props,
+        }
+
+        response = requests.patch(url, json=payload, headers=self.__headers)
+        if response.status_code == requests.codes.ok:
+            return {"ok": True}
+
+        return {"ok": False}
+
+
+class Festival(BaseModel):
+    id: str
+    name: str
+    region: str
+    access: str
+    # start_date: date
+    # end_date: Optional[date]
+    start_date: str
+    end_date: Optional[str]
+    url: HttpUrl
+    x_url: Optional[HttpUrl]
+
+
+def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
     # is_post=false つまり  まだ投稿していない祭礼情報を取得するためのフィルタ
     db_filter = {
         "and": [
@@ -15,22 +89,15 @@ def get_all(api_token, database_id, limit=100):
             {"property": "is_post", "checkbox": {"equals": False}}
         ]
     }
-    payload = {
-        "filter": db_filter,
-        "page_size": limit,
-    }
-    print(payload)
-    headers = {
-        "Accept": "application/json",
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-        "Authorization": f"{api_token}",
-    }
+    query_db_result = notion_client.query_database(
+        database_id=database_id, db_filter=db_filter
+    )
 
-    response = requests.post(url, json=payload, headers=headers).json()
-    print(response)
+    print("query_db_result")
+    # print(query_db_result)
+
     result = []
-    for r in response.get("results"):
+    for r in query_db_result:
         page_id = r.get("id")
 
         _props = r.get("properties")
@@ -39,31 +106,29 @@ def get_all(api_token, database_id, limit=100):
         access = _props.get("access").get("rich_text")[0].get("plain_text")
 
         _date_dict = _props.get("date").get("date")
-        _start_date = _date_dict.get("start")
-        _end_date = _date_dict.get("end")
-        date = f"{_start_date} ~ {_end_date}"
-        if _end_date is None:
-            date = _start_date
+        start_date = _date_dict.get("start")
+        end_date = _date_dict.get("end")
 
         url = _props.get("link").get("url")
-        print(r)
+
+        print(page_id)
+
         result.append(
-            {
-                "page_id": page_id,
-                "festival_name": festival_name,
-                "region": region,
-                "access": access,
-                "date": date,
-                "url": url,
-            }
+            Festival(
+                id=page_id,
+                name=festival_name,
+                region=region,
+                access=access,
+                start_date=start_date,
+                end_date=end_date,
+                url=HttpUrl(url=url),
+                x_url=HttpUrl(url=url),
+            )
         )
     return result
 
 
-def held_today(api_token, database_id, limit=100):
-    # notion get
-    url = f"https://api.notion.com/v1/databases/{database_id}/query"
-    # is_post=false つまり  まだ投稿していない祭礼情報を取得するためのフィルタ
+def held_today(notion_client: NotionClient, database_id: str):
     db_filter = {
         "and": [
             # {
@@ -75,20 +140,11 @@ def held_today(api_token, database_id, limit=100):
             {"property": "date", "date": {"this_week": {}}},
         ]
     }
-    payload = {
-        "filter": db_filter,
-        "page_size": limit,
-    }
-    headers = {
-        "Accept": "application/json",
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-        "Authorization": f"{api_token}",
-    }
-
-    response = requests.post(url, json=payload, headers=headers).json()
+    query_database_result = notion_client.query_database(
+        database_id=database_id, db_filter=db_filter
+    )
     result = []
-    for r in response.get("results"):
+    for r in query_database_result:
         page_id = r.get("id")
 
         _props = r.get("properties")
@@ -99,23 +155,27 @@ def held_today(api_token, database_id, limit=100):
         _date_dict = _props.get("date").get("date")
         start_date = _date_dict.get("start")
         end_date = _date_dict.get("end")
+        url = _props.get("link").get("url")
 
-        print(x_url)
         result.append(
-            {
-                "page_id": page_id,
-                "festival_name": festival_name,
-                "region": region,
-                "start_date": start_date,
-                "end_date": end_date,
-                "access": access,
-                "x_url": x_url,
-            }
+            Festival(
+                id=page_id,
+                name=festival_name,
+                region=region,
+                access=access,
+                start_date=start_date,
+                end_date=end_date,
+                url=HttpUrl(url=url),
+                x_url=HttpUrl(url=x_url),
+            )
         )
     return result
 
 
-def post(client, region, access, festival_name, date, url):
+def _post_content(festival: Festival):
+    date = f"{festival.start_date} ~ {festival.end_date}"
+    if festival.end_date is None:
+        date = festival.start_date
     post_content = (
         textwrap.dedent(
             """
@@ -135,19 +195,25 @@ def post(client, region, access, festival_name, date, url):
   """
         )
         .format(
-            region=region,
-            access=access,
-            festival_name=festival_name,
+            region=festival.region,
+            access=festival.access,
+            festival_name=festival.name,
             date=date,
-            url=url,
+            url=festival.url,
         )
         .strip()
     )
-    _post_result = client.create_tweet(text=post_content)
-    return {"post_id": _post_result.data.get("id")}
+
+    return post_content
 
 
-def _repost_content(region, access, festival_name, start_date, end_date, url):
+def post(x_client: tweepy.Client, festival: Festival):
+    post_id = x_client.post(_post_content(festival))
+    # TODO: エラーハンドリング
+    return {"post_id": post_id}
+
+
+def _repost_content(festival: Festival):
     today = datetime.date.today()
     repost_content = (
         textwrap.dedent(
@@ -162,63 +228,33 @@ def _repost_content(region, access, festival_name, start_date, end_date, url):
   """
         )
         .format(
-            region=region,
-            access=access,
-            festival_name=festival_name,
-            post_url=url,
+            region=festival.region,
+            access=festival.access,
+            festival_name=festival.name,
+            post_url=festival.x_url,
         )
         .strip()
     )
     return repost_content
 
 
-def repost(client, region, access, festival_name, start_date, end_date, url):
-    content = _repost_content(region, access, festival_name, start_date, end_date, url)
-    _repost_result = client.create_tweet(text=content)
-    return {"repost_id": _repost_result.data.get("id")}
+def repost(x_client: XClient, festival: Festival):
+    _repost_id = x_client.post(_repost_content(festival))
+    # TODO: エラーハンドリング
+    return {"repost_id": _repost_id}
 
 
-def update(api_token, page_id, post_id):
-    url = f"https://api.notion.com/v1/pages/{page_id}"
+def update_post_id(notion_client: NotionClient, festival: Festival, post_id: str):
     update_props = {
         "is_post": {"checkbox": True},
         "post_id": {"rich_text": [{"text": {"content": post_id}}]},
     }
-    payload = {
-        "properties": update_props,
-    }
-    headers = {
-        "Accept": "application/json",
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-        "Authorization": f"{api_token}",
-    }
-
-    response = requests.patch(url, json=payload, headers=headers)
-    if response.status_code == requests.codes.ok:
-        return {"ok": True}
-
-    return {"ok": False}
+    return notion_client.update_page(festival.id, update_props=update_props)
 
 
-def update_repost(api_token, page_id, repost_id):
-    url = f"https://api.notion.com/v1/pages/{page_id}"
+def update_repost_id(notion_client: NotionClient, festival: Festival, repost_id: str):
     update_props = {
         "is_repost": {"checkbox": True},
         "repost_id": {"rich_text": [{"text": {"content": repost_id}}]},
     }
-    payload = {
-        "properties": update_props,
-    }
-    headers = {
-        "Accept": "application/json",
-        "Notion-Version": "2022-06-28",
-        "Content-Type": "application/json",
-        "Authorization": f"{api_token}",
-    }
-
-    response = requests.patch(url, json=payload, headers=headers)
-    if response.status_code == requests.codes.ok:
-        return {"ok": True}
-
-    return {"ok": False}
+    return notion_client.update_page(festival.id, update_props=update_props)
