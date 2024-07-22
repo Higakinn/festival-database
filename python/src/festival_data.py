@@ -1,5 +1,4 @@
 import datetime
-from datetime import datetime
 import requests
 import textwrap
 import tweepy
