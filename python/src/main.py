@@ -1,8 +1,8 @@
-import festival_data
-import tweepy
+import logging
 import os
 import time
-import logging
+
+import festival_data
 
 ### ====================================== ログ設定 ============================================
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ def post_festival_data(notion_client, x_client, database_id):
     unposted_festivals = festival_data.get_unposted(
         notion_client=notion_client, database_id=database_id
     )
-    logger.debug(unposted_festivals)
+    # print(unposted_festivals)
     for festival in unposted_festivals:
         post_id = festival_data.post(x_client=x_client, festival=festival).get(
             "post_id"
