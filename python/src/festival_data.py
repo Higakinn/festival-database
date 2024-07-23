@@ -38,7 +38,7 @@ class XClient:
         # Create API object
         self.__api = tweepy.API(auth)
 
-    def post(self, content: str, img_url: HttpUrl):
+    def post(self, content: str, img_url: Optional[HttpUrl] = None):
         """
         Xにポストするための関数
         """
