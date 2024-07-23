@@ -42,15 +42,15 @@ class XClient:
         """
         Xにポストするための関数
         """
-        media_id = None
+        media_ids = None
         # 画像月のポストの場合は media uploadの処理を行う。
         if img_url is not None:
             media_info = self.__api.media_upload(
                 filename="test.png", file=io.BytesIO(requests.get(img_url).content)
             )
-            media_id = media_info.media_id
+            media_ids = [media_info.media_id]
 
-        _post_result = self.__client.create_tweet(text=content, media_ids=[media_id])
+        _post_result = self.__client.create_tweet(text=content, media_ids=media_ids)
         # TODO:エラーハンドリング
         return _post_result.data.get("id")
 
