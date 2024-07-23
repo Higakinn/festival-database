@@ -1,10 +1,11 @@
 import datetime
-import requests
+import io
 import textwrap
-import tweepy
-import pytz
-
+import zoneinfo
 from typing import List, Optional
+
+import requests
+import tweepy
 from pydantic import BaseModel, HttpUrl
 
 
@@ -28,12 +29,28 @@ class XClient:
             access_token=access_token,
             access_token_secret=access_token_secret,
         )
+        # Authenticate Twitter API
+        auth = tweepy.OAuthHandler(
+            consumer_key=consumer_key, consumer_secret=consumer_secret
+        )
+        auth.set_access_token(access_token, access_token_secret)
 
-    def post(self, content: str):
+        # Create API object
+        self.__api = tweepy.API(auth)
+
+    def post(self, content: str, img_url: Optional[HttpUrl] = None):
         """
         Xにポストするための関数
         """
-        _post_result = self.__client.create_tweet(text=content)
+        media_ids = None
+        # 画像月のポストの場合は media uploadの処理を行う。
+        if img_url is not None:
+            media_info = self.__api.media_upload(
+                filename="test.png", file=io.BytesIO(requests.get(img_url).content)
+            )
+            media_ids = [media_info.media_id]
+
+        _post_result = self.__client.create_tweet(text=content, media_ids=media_ids)
         # TODO:エラーハンドリング
         return _post_result.data.get("id")
 
@@ -97,6 +114,7 @@ class Festival(BaseModel):
     start_date: str
     end_date: Optional[str]
     url: HttpUrl
+    poster_url: Optional[HttpUrl] = None
     x_url: Optional[HttpUrl] = None
 
 
@@ -131,6 +149,7 @@ def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
             end_date = start_date
 
         url = _props.get("link").get("url")
+        poster_url = _props.get("poster").get("files")[0].get("external").get("url")
 
         result.append(
             Festival(
@@ -141,6 +160,7 @@ def get_unposted(notion_client: NotionClient, database_id) -> List[Festival]:
                 start_date=start_date,
                 end_date=end_date,
                 url=HttpUrl(url=url),
+                poster_url=HttpUrl(url=poster_url),
             )
         )
     return result
@@ -150,7 +170,7 @@ def held_today(notion_client: NotionClient, database_id: str) -> List[Festival]:
     """
     実行日時に開催される祭りデータを取得するための関数
     """
-    today = datetime.datetime.today(pytz.timezone("Asia/Tokyo"))
+    today = datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Tokyo")).date()
     db_filter = {
         "and": [
             # NOTE: {"property": "<カラム名>", <notionプロパティ>:<該当プロパティのフィルタリング>}
@@ -235,7 +255,9 @@ def post(x_client: tweepy.Client, festival: Festival):
     """
     Xに祭り情報をポストするための関数
     """
-    post_id = x_client.post(_post_content(festival))
+    post_id = x_client.post(
+        content=_post_content(festival), img_url=festival.poster_url
+    )
     # TODO: エラーハンドリング
     return {"post_id": post_id}
 
