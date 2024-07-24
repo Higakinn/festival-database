@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/Higakinn/festival-crawler/config"
@@ -30,21 +31,25 @@ func main() {
 	// TODO: LinePluginを追加
 	// linePlugin := &n.LinePlugin{}
 	// notificationService.AddNotificationPlugin(linePlugin)
-
+	fmt.Println("find unposeted festival data")
 	festivals, err := repo.FindUnPosted()
 	if err != nil {
 		log.Fatalf("")
 	}
 	for _, festival := range festivals {
+		fmt.Println("festival data post")
 		notificationService.Notify(ctx, &festival)
 		repo.Save(festival)
 	}
+
+	fmt.Println("find unquoted festival data")
 
 	afestivals, err := repo.FindUnQuoted()
 	if err != nil {
 		log.Fatalf("")
 	}
 	for _, festival := range afestivals {
+		fmt.Println("festival data quote post")
 		notificationService.Notify(ctx, &festival)
 		repo.Save(festival)
 	}
