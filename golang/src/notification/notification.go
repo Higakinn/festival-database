@@ -68,8 +68,8 @@ func (s XPlugin) Notify(ctx context.Context, festival *festival.Festival) {
 	festival.PostId = postId
 }
 
-func NewXPlugin() XPlugin {
-	return XPlugin{client: *x.NewXClient()}
+func NewXPlugin(XApiKey string, XApiKeySecret string, XApiAcessToken string, XApiAcessTokenSecret string) XPlugin {
+	return XPlugin{client: *x.NewXClient(XApiKey, XApiKeySecret, XApiAcessToken, XApiAcessTokenSecret)}
 }
 
 // Notify Slackに通知を送る関数

@@ -24,7 +24,7 @@ func main() {
 
 	notificationService := &notification.NotificationService{}
 	// XPluginを追加
-	xPlugin := notification.NewXPlugin()
+	xPlugin := notification.NewXPlugin(cfg.XApiKey, cfg.XApiKeySecret, cfg.XApiAccessToken, cfg.XApiAccessTokenSecret)
 	notificationService.AddNotificationPlugin(xPlugin)
 
 	// TODO: LinePluginを追加

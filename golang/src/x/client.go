@@ -11,14 +11,6 @@ import (
 	twitter "github.com/g8rswimmer/go-twitter/v2"
 )
 
-const (
-	X_API_KEY                 = ""
-	X_API_KEY_SECRET          = ""
-	X_API_BEARER_TOKEN        = ""
-	X_API_ACCESS_TOKEN        = ""
-	X_API_ACCESS_TOKEN_SECRET = ""
-)
-
 type XClient struct {
 	Client *twitter.Client
 	//画像upload用
@@ -29,11 +21,11 @@ type authorizer struct{}
 
 func (a *authorizer) Add(req *http.Request) {}
 
-func NewXClient() *XClient {
-	config := oauth1.NewConfig(X_API_KEY, X_API_KEY_SECRET)
+func NewXClient(XApiKey string, XApiKeySecret string, XApiAcessToken string, XApiAcessTokenSecret string) *XClient {
+	config := oauth1.NewConfig(XApiKey, XApiKeySecret)
 	httpClient := config.Client(oauth1.NoContext, &oauth1.Token{
-		Token:       X_API_ACCESS_TOKEN,
-		TokenSecret: X_API_ACCESS_TOKEN_SECRET,
+		Token:       XApiAcessToken,
+		TokenSecret: XApiAcessTokenSecret,
 	})
 
 	return &XClient{
@@ -42,7 +34,7 @@ func NewXClient() *XClient {
 			Client:     httpClient,
 			Host:       "https://api.twitter.com",
 		},
-		Api: anaconda.NewTwitterApiWithCredentials(X_API_ACCESS_TOKEN, X_API_ACCESS_TOKEN_SECRET, X_API_KEY, X_API_KEY_SECRET),
+		Api: anaconda.NewTwitterApiWithCredentials(XApiAcessToken, XApiAcessTokenSecret, XApiKey, XApiKeySecret),
 	}
 }
 
