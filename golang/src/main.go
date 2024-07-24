@@ -1,41 +1,51 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 
-	n "github.com/Higakinn/festival-crawler/notification"
-	r "github.com/Higakinn/festival-crawler/repository"
+	"github.com/Higakinn/festival-crawler/config"
+	festival "github.com/Higakinn/festival-crawler/domain/festival"
+	"github.com/Higakinn/festival-crawler/infra/notion"
+	"github.com/Higakinn/festival-crawler/notification"
 )
 
 func main() {
-	// NotificationServiceのインスタンスを作成
-	notificationService := &n.NotificationService{}
+	// 環境変数の読み込み
+	cfg, err := config.New()
+	if err != nil {
+		log.Fatalf("config error")
+	}
+	// contextの定義
+	ctx := context.Background()
 
+	var repo festival.FestivalRepository
+	repo = notion.NewFestivalRepository(ctx, cfg.NotionApiToken, cfg.NotionDBId)
+
+	notificationService := &notification.NotificationService{}
 	// XPluginを追加
-	xPlugin := &n.XPlugin{}
+	xPlugin := notification.NewXPlugin()
 	notificationService.AddNotificationPlugin(xPlugin)
 
-	// LinePluginを追加
-	linePlugin := &n.LinePlugin{}
-	notificationService.AddNotificationPlugin(linePlugin)
+	// TODO: LinePluginを追加
+	// linePlugin := &n.LinePlugin{}
+	// notificationService.AddNotificationPlugin(linePlugin)
 
-	// データの取得に使用するリポジトリを選択
-	var repo r.FestivalRepository
-	repo = &r.NotionDB{} // NotionDBを使用する場合
-	// repo = &MySQL{} // MySQLを使用する場合
-
-	// 情報を使ってデータを取得
-	data, err := repo.FindNonNotifiedData()
+	festivals, err := repo.FindUnPosted()
 	if err != nil {
-		// エラーハンドリング
-		log.Fatal(err)
+		log.Fatalf("")
+	}
+	for _, festival := range festivals {
+		notificationService.Notify(ctx, &festival)
+		repo.Save(festival)
 	}
 
-	// 取得したデータの処理
-	for _, d := range data {
-		fmt.Println(d)
-		// 通知の実行
-		notificationService.Notify("Hello, World!")
+	afestivals, err := repo.FindUnQuoted()
+	if err != nil {
+		log.Fatalf("")
+	}
+	for _, festival := range afestivals {
+		notificationService.Notify(ctx, &festival)
+		repo.Save(festival)
 	}
 }

@@ -1,0 +1,3 @@
+# infra層
+
+- infraディレクトリ配下に domain層のRepositoryインターフェースを実装したRepositoryを定義する
