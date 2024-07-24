@@ -4,16 +4,16 @@ FROM golang:1.20.0-bullseye as deploy-builder
 WORKDIR /app
 
 # module file copy
-COPY go.mod go.sum ./
+COPY src/go.mod src/go.sum ./
 RUN go mod download
 
 # application code copy
-COPY . . 
+COPY ./src . 
 
 RUN go build -trimpath -ldflags "-w -s" -o app
 
 ## deploy stage
-FROM debian:buillseye-slim as deploy
+FROM debian:bullseye-slim as deploy
 
 RUN apt-get update
 
