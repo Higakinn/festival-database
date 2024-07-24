@@ -30,5 +30,5 @@ jobs:
           cd golang
           
           echo -n ${ENCODED_ENV} | base64 -d > .env.golang
-          docker-compose run golang-batch ./main
+          docker-compose run golang-batch
           # docker-compose exec -T batch python main.py
