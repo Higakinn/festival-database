@@ -13,10 +13,8 @@ services:
       - .env.golang
   golang-batch:
     build:
-      context: .
+      context: ./src/
       dockerfile: Dockerfile
     tty: true
-    volumes:
-      - ./src/:/app
     env_file:
       - .env.golang
