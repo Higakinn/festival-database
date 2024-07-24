@@ -25,9 +25,10 @@ jobs:
           git push
       - name: batch
         env:
-          ENCODED_GOLANG_ENV: ${{ secrets.ENCODED_GOLANG_ENV }}
+          ENCODED_ENV: ${{ secrets.ENCODED_ENV }}
         run: |
-          touch .env.python
-          echo -n ${ENCODED_GOLANG_ENV} | base64 -d > .env.golang
+          cd golang
+          
+          echo -n ${ENCODED_ENV} | base64 -d > .env.golang
           docker-compose run golang-batch ./main
           # docker-compose exec -T batch python main.py
