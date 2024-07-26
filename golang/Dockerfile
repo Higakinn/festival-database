@@ -38,3 +38,8 @@ RUN go install github.com/air-verse/air@latest && \
   go install golang.org/x/tools/gopls@latest
 
 CMD ["air", "-c", "air.toml"]
+
+FROM golang:1.21.0 as ci
+WORKDIR /app
+
+CMD ["tail", "-f", "/dev/null"]

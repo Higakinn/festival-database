@@ -19,3 +19,13 @@ services:
     tty: true
     env_file:
       - .env.golang
+  golang-batch-ci:
+    build:
+      context: .
+      target: ci
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - ./src/:/app
+    env_file:
+      - .env.golang

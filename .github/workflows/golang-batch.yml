@@ -1,10 +1,10 @@
-name: github action golang batch template
+name: github action golang batch 
 
 on:
-  push
-  # schedule:
-  #   - cron: "0 */8 * * *" # 実行したい時間を指定(時間がutcなので注意)
-
+  # push
+  schedule:
+    - cron: "30 19 * * *" # UTC
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,7 +28,6 @@ jobs:
           ENCODED_ENV: ${{ secrets.ENCODED_ENV }}
         run: |
           cd golang
-          
           echo -n ${ENCODED_ENV} | base64 -d > .env.golang
-          docker-compose run golang-batch
-          # docker-compose exec -T batch python main.py
+          docker compose run golang-batch-ci go run cmd/cli/fesctl.go notify unposted --dry-run=false
+          docker compose run golang-batch-ci go run cmd/cli/fesctl.go notify today --dry-run=false
