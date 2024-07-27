@@ -2,8 +2,8 @@ name: github action batch template
 
 on:
   # push:
-  schedule:
-    - cron: "30 19 * * *" # UTC
+  # schedule:
+  #   - cron: "30 19 * * *" # UTC
   workflow_dispatch:
 jobs:
   build:

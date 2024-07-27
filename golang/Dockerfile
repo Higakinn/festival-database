@@ -4,18 +4,18 @@ FROM golang:1.20.0-bullseye as deploy-builder
 WORKDIR /app
 
 # module file copy
-COPY go.mod go.sum ./
+COPY src/go.mod src/go.sum ./
 RUN go mod download
 
 # application code copy
-COPY . . 
+COPY ./src . 
 
 RUN go build -trimpath -ldflags "-w -s" -o app
 
 ## deploy stage
-FROM debian:buillseye-slim as deploy
+FROM debian:bullseye-slim as deploy
 
-RUN apt-get update
+RUN apt-get update && apt-get install -y ca-certificates openssl
 
 COPY --from=deploy-builder /app/app .
 
@@ -38,3 +38,8 @@ RUN go install github.com/air-verse/air@latest && \
   go install golang.org/x/tools/gopls@latest
 
 CMD ["air", "-c", "air.toml"]
+
+FROM golang:1.21.0 as ci
+WORKDIR /app
+
+CMD ["tail", "-f", "/dev/null"]
