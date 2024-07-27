@@ -23,7 +23,7 @@ func NewFestivalRepository(client *notion.Client, dbName string) repository.Fest
 }
 
 // FindUnPosted implements festival.FestivalRepository.
-func (r FestivalRepository) FindUnPosted(ctx context.Context) ([]*models.Festival, error) {
+func (r FestivalRepository) FindByIsPost(ctx context.Context, isPost bool) ([]*models.Festival, error) {
 	db_query := &notion.DatabaseQuery{
 		Filter: &notion.DatabaseQueryFilter{
 			And: []notion.DatabaseQueryFilter{
@@ -31,7 +31,7 @@ func (r FestivalRepository) FindUnPosted(ctx context.Context) ([]*models.Festiva
 					Property: "is_post",
 					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
 						Checkbox: &notion.CheckboxDatabaseQueryFilter{
-							Equals: &[]bool{false}[0],
+							Equals: &[]bool{isPost}[0],
 						},
 					},
 				},
@@ -41,11 +41,7 @@ func (r FestivalRepository) FindUnPosted(ctx context.Context) ([]*models.Festiva
 	return r.queryDatabase(ctx, r.dbName, db_query)
 }
 
-func (r FestivalRepository) FindUnQuoted(ctx context.Context) ([]*models.Festival, error) {
-	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-	year, month, day := time.Now().In(jst).Date()
-	today := time.Date(year, month, day, 9, 0, 0, 0, jst)
-	fmt.Println(today)
+func (r FestivalRepository) FindByDate(ctx context.Context, Date time.Time) ([]*models.Festival, error) {
 
 	db_query := &notion.DatabaseQuery{
 		Filter: &notion.DatabaseQueryFilter{
@@ -70,7 +66,7 @@ func (r FestivalRepository) FindUnQuoted(ctx context.Context) ([]*models.Festiva
 					Property: "date",
 					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
 						Date: &notion.DatePropertyFilter{
-							Equals: &today,
+							Equals: &Date,
 						},
 					},
 				},

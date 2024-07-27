@@ -2,12 +2,13 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/Higakinn/festival-crawler/app/domain/models"
 )
 
 type FestivalRepository interface {
-	FindUnPosted(ctx context.Context) ([]*models.Festival, error)
-	FindUnQuoted(ctx context.Context) ([]*models.Festival, error)
+	FindByIsPost(ctx context.Context, isPost bool) ([]*models.Festival, error)
+	FindByDate(ctx context.Context, date time.Time) ([]*models.Festival, error)
 	Save(ctx context.Context, festival *models.Festival) error
 }

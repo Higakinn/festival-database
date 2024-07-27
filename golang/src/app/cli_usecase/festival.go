@@ -43,7 +43,10 @@ func (fuc *FestivalUseCase) UnposetedList(ctx context.Context, dryRun bool) erro
 	}
 
 	// 通常の処理
-	festivals, err := fuc.repository.FindUnPosted(ctx)
+	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+	year, month, day := time.Now().In(jst).Date()
+	today := time.Date(year, month, day, 9, 0, 0, 0, jst)
+	festivals, err := fuc.repository.FindByDate(ctx, today)
 	if err != nil {
 		return err
 	}
@@ -56,7 +59,11 @@ func (fuc *FestivalUseCase) UnposetedList(ctx context.Context, dryRun bool) erro
 }
 
 func (fuc *FestivalUseCase) NofityUnposetedList(ctx context.Context, dryRun bool) error {
-	festivals, err := fuc.repository.FindUnPosted(ctx)
+	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+	year, month, day := time.Now().In(jst).Date()
+	today := time.Date(year, month, day, 9, 0, 0, 0, jst)
+	festivals, err := fuc.repository.FindByDate(ctx, today)
+
 	if err != nil {
 		return err
 	}
@@ -114,7 +121,8 @@ func (fuc *FestivalUseCase) HoldTodayList(ctx context.Context, dryRun bool) erro
 	// 通常の処理
 	// TODO: 本日開催のデータを取ってくる関数を定義すべき。
 	// 現状だと、 本日開催でも投稿済みのフラグが立ってたら情報取得しないようになっている。
-	festivals, err := fuc.repository.FindUnQuoted(ctx)
+	isPost := false
+	festivals, err := fuc.repository.FindByIsPost(ctx, isPost)
 	if err != nil {
 		return err
 	}
@@ -132,7 +140,8 @@ func (fuc *FestivalUseCase) HoldTodayList(ctx context.Context, dryRun bool) erro
 
 // NofityHoldTodayList関数は
 func (fuc *FestivalUseCase) NofityHoldTodayList(ctx context.Context, dryRun bool) error {
-	festivals, err := fuc.repository.FindUnQuoted(ctx)
+	isPost := false
+	festivals, err := fuc.repository.FindByIsPost(ctx, isPost)
 	if err != nil {
 		return err
 	}
@@ -154,7 +163,6 @@ func (fuc *FestivalUseCase) NofityHoldTodayList(ctx context.Context, dryRun bool
 	for i, festival := range festivals {
 		fmt.Println(i + 1)
 		content := festival.GenQuoteRepostContent()
-		fuc.notification.Client.Post(ctx, content, "")
 		repostId, err := fuc.notification.Client.Post(ctx, content, "")
 		if err != nil {
 			return err
