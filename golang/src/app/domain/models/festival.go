@@ -42,21 +42,14 @@ func (f *Festival) GenPostContent() string {
 	if f.StartDate == f.EndDate {
 		date = f.StartDate.Format(time.DateOnly)
 	}
-	return fmt.Sprintf(`【🏮祭り情報🏮】
-#%s
-
-■ 開催期間
-・%s
-
-■ 開催場所
-・%s
-
-■ アクセス
-・%s
-■ 参考
+	return fmt.Sprintf(`🏮#%s
 %s
+
+・開催期間：%s
+・開催場所：%s
+・アクセス：%s
 `,
-		f.Name, date, f.Region, f.Access, f.Url)
+		f.Name, f.Url, date, f.Region, f.Access)
 }
 
 // TODO: ドメインモデルが持つべき振る舞いではないので、適切な場所に移す
