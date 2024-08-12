@@ -81,6 +81,7 @@ func (fuc *FestivalUseCase) NofityUnposetedList(ctx context.Context, dryRun bool
 	// 通常の処理
 	for i, festival := range festivals {
 		fmt.Println(i + 1)
+		fmt.Println(festival.Name)
 		content := festival.GenPostContent()
 		postId, err := fuc.notification.Client.Post(ctx, content, festival.PosterUrl)
 		if err != nil {
@@ -164,6 +165,7 @@ func (fuc *FestivalUseCase) NofityHoldTodayList(ctx context.Context, dryRun bool
 
 	for i, festival := range festivals {
 		fmt.Println(i + 1)
+
 		content := festival.GenQuoteRepostContent()
 		repostId, err := fuc.notification.Client.Post(ctx, content, "")
 		if err != nil {
