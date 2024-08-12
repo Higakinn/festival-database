@@ -51,6 +51,7 @@ func (fuc *FestivalUseCase) UnposetedList(ctx context.Context, dryRun bool) erro
 
 	for i, festival := range festivals {
 		fmt.Println(i + 1)
+		fmt.Println(festival.Name)
 		fmt.Println(festival.GenPostContent())
 	}
 	return nil

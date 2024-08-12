@@ -66,7 +66,6 @@ func main() {
 							},
 						},
 						Action: func(c *cli.Context) error {
-							fmt.Println(c.Bool("dry-run"))
 							err := cli_usecase.FestivalUseCase.UnposetedList(ctx, c.Bool("dry-run"))
 							if err != nil {
 								return err
