@@ -31,3 +31,16 @@ jobs:
           echo -n ${ENCODED_ENV} | base64 -d > .env.golang
           docker compose run golang-batch-ci go run cmd/cli/fesctl.go notify unposted --dry-run=false
           docker compose run golang-batch-ci go run cmd/cli/fesctl.go notify today --dry-run=false
+      - name: success
+        uses: sarisia/actions-status-discord@v1
+        if: success()
+        with:
+          description: "festival database Batch Success!!"
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: failure
+        uses: sarisia/actions-status-discord@v1
+        if: failure()
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          description: "festival database batch Batch Failure!!"
+          color: 0xff91a4

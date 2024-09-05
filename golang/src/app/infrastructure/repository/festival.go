@@ -35,6 +35,38 @@ func (r FestivalRepository) FindByIsPost(ctx context.Context, isPost bool) ([]*m
 						},
 					},
 				},
+				{
+					Property: "date",
+					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
+						Date: &notion.DatePropertyFilter{
+							IsNotEmpty: true,
+						},
+					},
+				},
+				{
+					Property: "region",
+					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
+						RichText: &notion.TextPropertyFilter{
+							IsNotEmpty: true,
+						},
+					},
+				},
+				{
+					Property: "access",
+					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
+						RichText: &notion.TextPropertyFilter{
+							IsNotEmpty: true,
+						},
+					},
+				},
+				{
+					Property: "link",
+					DatabaseQueryPropertyFilter: notion.DatabaseQueryPropertyFilter{
+						URL: &notion.TextPropertyFilter{
+							IsNotEmpty: true,
+						},
+					},
+				},
 			},
 		},
 	}
