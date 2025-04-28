@@ -1,9 +1,9 @@
 name: github action golang batch 
 
 on:
-  push:
-  schedule:
-    - cron: "30 19 * * *" # UTC
+  # push:
+  # schedule:
+  #   - cron: "30 19 * * *" # UTC
   workflow_dispatch:
 jobs:
   build:
